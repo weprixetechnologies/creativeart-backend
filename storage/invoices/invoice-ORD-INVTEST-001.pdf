@@ -1,0 +1,33 @@
+======================================================================
+                        CREATIVE ART - INVOICE
+======================================================================
+Invoice Number: INV-INVTEST-001
+Order Number:   ORD-INVTEST-001
+Order Date:     Sun Jul 12 2026 13:00:48 GMT+0530 (India Standard Time)
+Order Type:     STANDARD
+Order Status:   PAID
+----------------------------------------------------------------------
+Customer Name:  Invoice Customer
+Customer Email: invcustomer@example.com
+----------------------------------------------------------------------
+Shipping Address:
+Invoice Recipient (9876543210)
+456 Preservations Road
+Bangalore, Karnataka - 560001
+India
+======================================================================
+ITEMS:
+----------------------------------------------------------------------
+1. Golden Keepsake
+   Qty: 1 | Unit Price: Rs. 2500.00 | Total: Rs. 2500.00
+----------------------------------------------------------------------
+Subtotal:         Rs. 2500.00
+Discount:         Rs. 0.00
+Tax (GST):        Rs. 0.00
+Shipping:         Rs. 0.00
+----------------------------------------------------------------------
+Total Paid/Due:   Rs. 2500.00
+======================================================================
+Thank you for shopping with Creative Art!
+For support, contact support@creativeart.com
+======================================================================

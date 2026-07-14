@@ -1,0 +1,11 @@
+<p class="greeting">Your creation is ready! 🌟</p>
+<p class="intro">Hi {{customerName}}, we're thrilled to let you know that your custom order <strong>{{orderNumber}}</strong> is fully completed and ready to ship — we just need your final payment to proceed!</p>
+<div class="infobox">
+  <p><span class="label">Order Number</span><br/><span class="value">{{orderNumber}}</span></p>
+  <p><span class="label">Final Amount Due</span><br/><span class="value">₹{{finalAmount}}</span></p>
+</div>
+<div class="cta-wrap">
+  <a href="{{frontendUrl}}/orders/{{orderNumber}}/payment" class="cta">Pay Final Amount & Ship</a>
+</div>
+<hr/>
+<p class="message">Once the final payment is received, we'll dispatch your order immediately. We can't wait for you to see it! 🎉</p>

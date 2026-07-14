@@ -1,0 +1,11 @@
+<p class="greeting">Payout Processed! 💸</p>
+<p class="intro">Hi {{customerName}}, your affiliate payout batch <strong>#{{batchId}}</strong> has been processed successfully.</p>
+<div class="infobox">
+  <p><span class="label">Payout Amount</span><br/><span class="value">₹{{totalAmount}}</span></p>
+  ${notes ? `<p><span class="label">Transaction Notes</span><br/><span class="value">${notes}</span></p>` : ''}
+</div>
+<div class="cta-wrap">
+  <a href="{{frontendUrl}}/account/affiliate" class="cta">View Payout History</a>
+</div>
+<hr/>
+<p class="message">Thank you for being a valued affiliate partner with CreativeArt! 🎨</p>

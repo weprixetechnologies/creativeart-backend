@@ -1,0 +1,35 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "nodemon server.js",
+    "seed": "node scratch/seed-data.js",
+    "seed:admin": "node scratch/seed-admin.js",
+    "seed:notifications": "node scratch/seed-notification-templates.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1085.0",
+    "@aws-sdk/s3-request-presigner": "^3.1085.0",
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "ioredis": "^5.11.1",
+    "joi": "^18.2.3",
+    "jsonwebtoken": "^9.0.3",
+    "mariadb": "^3.5.3",
+    "node-fetch": "^2.7.0",
+    "nodemailer": "^9.0.3",
+    "uuid": "^14.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14",
+    "supertest": "^7.2.2"
+  }
+}

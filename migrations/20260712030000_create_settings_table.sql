@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS settings (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `key` VARCHAR(100) NOT NULL UNIQUE,
+  value TEXT NOT NULL,
+  updated_by_user_id BIGINT UNSIGNED NULL,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_settings_user_id FOREIGN KEY (updated_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO settings (`key`, value) VALUES ('stuck_order_sweep_threshold_days', '14') ON DUPLICATE KEY UPDATE value=value;

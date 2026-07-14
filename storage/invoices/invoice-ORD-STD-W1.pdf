@@ -1,0 +1,27 @@
+======================================================================
+                        CREATIVE ART - INVOICE
+======================================================================
+Invoice Number: INV-STD-W1
+Order Number:   ORD-STD-W1
+Order Date:     Sun Jul 12 2026 13:00:52 GMT+0530 (India Standard Time)
+Order Type:     STANDARD
+Order Status:   PAID
+----------------------------------------------------------------------
+Customer Name:  Webhook Test User
+Customer Email: webhookuser@example.com
+----------------------------------------------------------------------
+Shipping Address:
+N/A
+======================================================================
+ITEMS:
+----------------------------------------------------------------------
+Subtotal:         Rs. 1000.00
+Discount:         Rs. 0.00
+Tax (GST):        Rs. 0.00
+Shipping:         Rs. 0.00
+----------------------------------------------------------------------
+Total Paid/Due:   Rs. 1000.00
+======================================================================
+Thank you for shopping with Creative Art!
+For support, contact support@creativeart.com
+======================================================================

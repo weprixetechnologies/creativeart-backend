@@ -1,0 +1,85 @@
+-- CREATE TABLE affiliates
+CREATE TABLE affiliates (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL UNIQUE,
+  referral_code VARCHAR(20) NOT NULL UNIQUE,
+  status ENUM('PENDING', 'APPROVED', 'REJECTED', 'SUSPENDED') NOT NULL DEFAULT 'PENDING',
+  commission_type ENUM('PERCENTAGE', 'FLAT') NULL,
+  commission_value DECIMAL(10,2) NULL,
+  applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  approved_at TIMESTAMP NULL,
+  approved_by_user_id BIGINT UNSIGNED NULL,
+  rejection_reason VARCHAR(500) NULL,
+  payout_notes VARCHAR(1000) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT,
+  FOREIGN KEY (approved_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- CREATE TABLE affiliate_clicks
+CREATE TABLE affiliate_clicks (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  affiliate_id BIGINT UNSIGNED NOT NULL,
+  landing_path VARCHAR(500) NOT NULL,
+  clicked_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (affiliate_id) REFERENCES affiliates(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- CREATE TABLE affiliate_referrals
+CREATE TABLE affiliate_referrals (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  affiliate_id BIGINT UNSIGNED NOT NULL,
+  order_id BIGINT UNSIGNED NOT NULL UNIQUE,
+  referral_code_used VARCHAR(20) NOT NULL,
+  attributed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (affiliate_id) REFERENCES affiliates(id) ON DELETE RESTRICT,
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- CREATE TABLE affiliate_payout_batches
+CREATE TABLE affiliate_payout_batches (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  affiliate_id BIGINT UNSIGNED NOT NULL,
+  total_amount DECIMAL(10,2) NOT NULL,
+  status ENUM('PROCESSING', 'COMPLETED') NOT NULL DEFAULT 'PROCESSING',
+  processed_by_user_id BIGINT UNSIGNED NOT NULL,
+  processed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  notes VARCHAR(1000) NULL,
+  FOREIGN KEY (affiliate_id) REFERENCES affiliates(id) ON DELETE RESTRICT,
+  FOREIGN KEY (processed_by_user_id) REFERENCES users(id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- CREATE TABLE affiliate_commissions
+CREATE TABLE affiliate_commissions (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  affiliate_id BIGINT UNSIGNED NOT NULL,
+  order_id BIGINT UNSIGNED NOT NULL UNIQUE,
+  referral_id BIGINT UNSIGNED NOT NULL,
+  base_amount DECIMAL(10,2) NOT NULL,
+  commission_type ENUM('PERCENTAGE', 'FLAT') NOT NULL,
+  commission_value DECIMAL(10,2) NOT NULL,
+  commission_amount DECIMAL(10,2) NOT NULL,
+  status ENUM('PENDING', 'CONFIRMED', 'CANCELLED', 'PAID') NOT NULL DEFAULT 'PENDING',
+  confirmed_at TIMESTAMP NULL,
+  cancelled_at TIMESTAMP NULL,
+  payout_batch_id BIGINT UNSIGNED NULL,
+  paid_at TIMESTAMP NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (affiliate_id) REFERENCES affiliates(id) ON DELETE RESTRICT,
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE RESTRICT,
+  FOREIGN KEY (referral_id) REFERENCES affiliate_referrals(id) ON DELETE RESTRICT,
+  FOREIGN KEY (payout_batch_id) REFERENCES affiliate_payout_batches(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Add columns to orders
+ALTER TABLE orders
+  ADD COLUMN affiliate_id BIGINT UNSIGNED NULL,
+  ADD COLUMN referral_code_used VARCHAR(20) NULL,
+  ADD CONSTRAINT fk_orders_affiliate_id FOREIGN KEY (affiliate_id) REFERENCES affiliates(id) ON DELETE RESTRICT;
+
+-- Add columns to products
+ALTER TABLE products
+  ADD COLUMN commission_type_override ENUM('PERCENTAGE', 'FLAT') NULL,
+  ADD COLUMN commission_value_override DECIMAL(10,2) NULL;

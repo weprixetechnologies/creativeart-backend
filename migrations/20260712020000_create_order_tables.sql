@@ -1,0 +1,200 @@
+CREATE TABLE IF NOT EXISTS office_addresses (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  label VARCHAR(50) NOT NULL,
+  contact_name VARCHAR(150) NOT NULL,
+  contact_phone VARCHAR(20) NOT NULL,
+  line1 VARCHAR(255) NOT NULL,
+  line2 VARCHAR(255) NULL,
+  city VARCHAR(100) NOT NULL,
+  state VARCHAR(100) NOT NULL,
+  pincode VARCHAR(10) NOT NULL,
+  country VARCHAR(100) DEFAULT 'India',
+  status ENUM('ACTIVE', 'INACTIVE') NOT NULL DEFAULT 'ACTIVE',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS carts (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NULL,
+  session_id VARCHAR(100) NULL,
+  cart_item_type ENUM('PRODUCT', 'PROJECT') NULL,
+  status ENUM('ACTIVE', 'CONVERTED', 'ABANDONED') NOT NULL DEFAULT 'ACTIVE',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_carts_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS cart_items (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  cart_id BIGINT UNSIGNED NOT NULL,
+  product_id BIGINT UNSIGNED NOT NULL,
+  variant_id BIGINT UNSIGNED NULL,
+  qty INT UNSIGNED NOT NULL DEFAULT 1,
+  unit_price_snapshot DECIMAL(10,2) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_cart_items_cart_id FOREIGN KEY (cart_id) REFERENCES carts(id) ON DELETE CASCADE,
+  CONSTRAINT fk_cart_items_product_id FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+  CONSTRAINT fk_cart_items_variant_id FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS cart_item_custom_values (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  cart_item_id BIGINT UNSIGNED NOT NULL,
+  custom_field_id BIGINT UNSIGNED NOT NULL,
+  value TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_cicv_cart_item_id FOREIGN KEY (cart_item_id) REFERENCES cart_items(id) ON DELETE CASCADE,
+  CONSTRAINT fk_cicv_custom_field_id FOREIGN KEY (custom_field_id) REFERENCES product_custom_fields(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS coupons (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  code VARCHAR(50) NOT NULL UNIQUE,
+  type ENUM('PERCENTAGE', 'FLAT') NOT NULL,
+  value DECIMAL(10,2) NOT NULL,
+  min_order_value DECIMAL(10,2) NULL,
+  usage_limit_global INT NULL,
+  usage_limit_per_user INT NULL,
+  expires_at TIMESTAMP NULL,
+  status ENUM('ACTIVE', 'DISABLED') NOT NULL DEFAULT 'ACTIVE',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS orders (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  order_number VARCHAR(30) NOT NULL UNIQUE,
+  user_id BIGINT UNSIGNED NOT NULL,
+  order_type ENUM('STANDARD', 'DUAL_PAYMENT') NOT NULL,
+  status VARCHAR(40) NOT NULL,
+  pre_hold_status VARCHAR(40) NULL,
+  address_id BIGINT UNSIGNED NULL,
+  selected_office_address_id BIGINT UNSIGNED NULL,
+  coupon_id BIGINT UNSIGNED NULL,
+  subtotal DECIMAL(10,2) NOT NULL,
+  discount_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  tax_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  shipping_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  total_amount DECIMAL(10,2) NOT NULL,
+  advance_amount DECIMAL(10,2) NULL,
+  final_amount DECIMAL(10,2) NULL,
+  final_amount_override_reason VARCHAR(500) NULL,
+  advance_paid_at TIMESTAMP NULL,
+  final_paid_at TIMESTAMP NULL,
+  placed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_orders_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_orders_coupon_id FOREIGN KEY (coupon_id) REFERENCES coupons(id) ON DELETE SET NULL,
+  CONSTRAINT fk_orders_address_id FOREIGN KEY (address_id) REFERENCES addresses(id) ON DELETE SET NULL,
+  CONSTRAINT fk_orders_office_address_id FOREIGN KEY (selected_office_address_id) REFERENCES office_addresses(id) ON DELETE SET NULL,
+  INDEX idx_orders_type_status (order_type, status),
+  INDEX idx_orders_user_id (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS order_items (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  order_id BIGINT UNSIGNED NOT NULL,
+  product_id BIGINT UNSIGNED NOT NULL,
+  variant_id BIGINT UNSIGNED NULL,
+  product_name_snapshot VARCHAR(200) NOT NULL,
+  qty INT UNSIGNED NOT NULL DEFAULT 1,
+  unit_price DECIMAL(10,2) NOT NULL,
+  line_total DECIMAL(10,2) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_order_items_order_id FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+  CONSTRAINT fk_order_items_product_id FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_order_items_variant_id FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS order_item_custom_values (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  order_item_id BIGINT UNSIGNED NOT NULL,
+  custom_field_id BIGINT UNSIGNED NOT NULL,
+  field_label_snapshot VARCHAR(200) NOT NULL,
+  value TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_oicv_order_item_id FOREIGN KEY (order_item_id) REFERENCES order_items(id) ON DELETE CASCADE,
+  CONSTRAINT fk_oicv_custom_field_id FOREIGN KEY (custom_field_id) REFERENCES product_custom_fields(id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS order_payments (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  order_id BIGINT UNSIGNED NOT NULL,
+  payment_type ENUM('FULL', 'ADVANCE', 'FINAL') NOT NULL,
+  gateway ENUM('PHONEPE', 'COD') NOT NULL,
+  gateway_order_id VARCHAR(100) NOT NULL,
+  gateway_payment_id VARCHAR(100) NULL,
+  amount DECIMAL(10,2) NOT NULL,
+  status ENUM('CREATED', 'CAPTURED', 'FAILED', 'PENDING') NOT NULL DEFAULT 'CREATED',
+  raw_webhook_payload JSON NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_order_payments_order_id FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE RESTRICT,
+  UNIQUE KEY uq_order_payments_gateway_payment_id (gateway_payment_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS order_status_history (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  order_id BIGINT UNSIGNED NOT NULL,
+  from_status VARCHAR(40) NULL,
+  to_status VARCHAR(40) NOT NULL,
+  actor_type ENUM('CUSTOMER', 'ADMIN', 'STAFF', 'SYSTEM', 'WEBHOOK') NOT NULL,
+  actor_user_id BIGINT UNSIGNED NULL,
+  note VARCHAR(1000) NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_osh_order_id FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_osh_actor_user_id FOREIGN KEY (actor_user_id) REFERENCES users(id) ON DELETE SET NULL,
+  INDEX idx_osh_order_id (order_id),
+  INDEX idx_osh_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS coupon_usages (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  coupon_id BIGINT UNSIGNED NOT NULL,
+  user_id BIGINT UNSIGNED NOT NULL,
+  order_id BIGINT UNSIGNED NOT NULL,
+  used_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_coupon_usages_coupon_id FOREIGN KEY (coupon_id) REFERENCES coupons(id) ON DELETE CASCADE,
+  CONSTRAINT fk_coupon_usages_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_coupon_usages_order_id FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS material_shipments (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  order_id BIGINT UNSIGNED NOT NULL,
+  office_address_id BIGINT UNSIGNED NOT NULL,
+  courier_name VARCHAR(100) NOT NULL,
+  tracking_number VARCHAR(100) NOT NULL,
+  shipped_at TIMESTAMP NOT NULL,
+  received_at TIMESTAMP NULL,
+  received_by_user_id BIGINT UNSIGNED NULL,
+  condition_notes VARCHAR(1000) NULL,
+  condition_photo_url VARCHAR(500) NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_ms_order_id FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_ms_office_address_id FOREIGN KEY (office_address_id) REFERENCES office_addresses(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_ms_received_by FOREIGN KEY (received_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS shipments (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  order_id BIGINT UNSIGNED NOT NULL,
+  shiprocket_order_id VARCHAR(100) NOT NULL,
+  shiprocket_shipment_id VARCHAR(100) NOT NULL,
+  awb_code VARCHAR(100) NULL,
+  courier_name VARCHAR(100) NULL,
+  status VARCHAR(40) NOT NULL,
+  packed_at TIMESTAMP NULL,
+  pickup_scheduled_at TIMESTAMP NULL,
+  delivered_at TIMESTAMP NULL,
+  label_url VARCHAR(500) NULL,
+  manifest_url VARCHAR(500) NULL,
+  tracking_payload JSON NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_shipments_order_id FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE RESTRICT,
+  UNIQUE KEY uq_shipments_shiprocket_shipment_id (shiprocket_shipment_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
