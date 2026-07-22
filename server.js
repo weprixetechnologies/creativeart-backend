@@ -32,6 +32,10 @@ const wishlistRoutes = require('./src/routes/wishlist.routes');
 const adminReviewsRoutes = require('./src/routes/admin/reviews.routes');
 const affiliateRoutes = require('./src/routes/affiliate.routes');
 const adminAffiliateRoutes = require('./src/routes/admin/affiliates.routes');
+const bannersRoutes = require('./src/routes/banners.routes');
+const settingsRoutes = require('./src/routes/settings.routes');
+const imagerizedSectionsRoutes = require('./src/routes/imagerized-sections.routes');
+const adminImagerizedSectionsRoutes = require('./src/routes/admin/imagerized-sections.routes');
 const errorMiddleware = require('./src/middlewares/error.middleware');
 require('./src/jobs'); // Load and register background job handlers
 
@@ -82,9 +86,14 @@ app.use('/api/v1/admin/dashboard', adminDashboardRoutes);
 app.use('/api/v1/admin/users', adminUsersRoutes);
 app.use('/api/v1/admin/notifications', adminNotificationsRoutes);
 app.use('/api/v1/wishlist', wishlistRoutes);
+app.use('/api/v1/reviews', require('./src/routes/reviews.routes'));
 app.use('/api/v1/admin/reviews', adminReviewsRoutes);
 app.use('/api/v1/affiliate', affiliateRoutes);
 app.use('/api/v1/admin', adminAffiliateRoutes);
+app.use('/api/v1/banners', bannersRoutes);
+app.use('/api/v1/settings', settingsRoutes);
+app.use('/api/v1/imagerized-sections', imagerizedSectionsRoutes);
+app.use('/api/v1/admin/imagerized-sections', adminImagerizedSectionsRoutes);
 
 // Central error handler
 app.use(errorMiddleware);

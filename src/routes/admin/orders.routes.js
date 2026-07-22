@@ -18,5 +18,6 @@ router.post('/:id/confirm-material-received', roleGuard('ADMIN', 'STAFF_PRODUCTI
 router.post('/:id/start-production', roleGuard('ADMIN', 'STAFF_PRODUCTION'), AdminOrderController.startProduction);
 router.post('/:id/mark-ready', roleGuard('ADMIN', 'STAFF_PRODUCTION'), AdminOrderController.markReady);
 router.post('/:id/mark-packed', roleGuard('ADMIN', 'STAFF_PACKAGING'), AdminOrderController.markPacked);
+router.post('/:id/update-manual-shipping', roleGuard('ADMIN'), AdminOrderController.updateManualShipping);
 
 module.exports = router;

@@ -100,12 +100,17 @@ class ProductService {
   static async getProducts(filters) {
     const result = await ProductModel.findAll(filters);
     
-    // Enrich catalog items with their images
+    // Enrich catalog items with their images and variants
     const enriched = await Promise.all(result.data.map(async (prod) => {
       const images = await ProductImageModel.findByProductId(prod.id);
+      let variants = await ProductVariantModel.findByProductId(prod.id);
+      if (filters.status !== undefined && filters.status === 'ACTIVE') {
+        variants = variants.filter(v => v.status === 'ACTIVE');
+      }
       return {
         ...prod,
-        images
+        images,
+        variants
       };
     }));
 

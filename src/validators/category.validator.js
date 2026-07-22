@@ -7,7 +7,8 @@ const createCategorySchema = Joi.object({
   name: Joi.string().max(150).required(),
   slug: Joi.string().max(150).regex(slugRegex).message('Slug must only contain lowercase alphanumeric characters and hyphens.').required(),
   sortOrder: Joi.number().integer().default(0),
-  status: Joi.string().valid('ACTIVE', 'ARCHIVED').default('ACTIVE')
+  status: Joi.string().valid('ACTIVE', 'ARCHIVED').default('ACTIVE'),
+  photoUrl: Joi.string().uri().allow(null, '')
 });
 
 const updateCategorySchema = Joi.object({
@@ -16,7 +17,8 @@ const updateCategorySchema = Joi.object({
   slug: Joi.string().max(150).regex(slugRegex)
     .message('Slug must only contain lowercase alphanumeric characters and hyphens.'),
   sortOrder: Joi.number().integer(),
-  status: Joi.string().valid('ACTIVE', 'ARCHIVED')
+  status: Joi.string().valid('ACTIVE', 'ARCHIVED'),
+  photoUrl: Joi.string().uri().allow(null, '')
 });
 
 module.exports = {

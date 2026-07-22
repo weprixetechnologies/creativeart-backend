@@ -2,7 +2,7 @@ const CategoryModel = require('../models/category.model');
 const { NotFoundError, ConflictError } = require('../utils/errors');
 
 class CategoryService {
-  static async createCategory({ parentId, name, slug, sortOrder, status }) {
+  static async createCategory({ parentId, name, slug, sortOrder, status, photoUrl }) {
     // Check if slug is taken
     const existing = await CategoryModel.findBySlug(slug);
     if (existing) {
@@ -17,7 +17,7 @@ class CategoryService {
       }
     }
 
-    return CategoryModel.create({ parentId, name, slug, sortOrder, status });
+    return CategoryModel.create({ parentId, name, slug, sortOrder, status, photoUrl });
   }
 
   static async getCategoryById(id) {

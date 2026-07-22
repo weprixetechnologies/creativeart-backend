@@ -218,6 +218,9 @@ class AdminOrderController {
           totalAmount: parseFloat(order.total_amount),
           advanceAmount: order.advance_amount ? parseFloat(order.advance_amount) : null,
           finalAmount: order.final_amount ? parseFloat(order.final_amount) : null,
+          awbNumber: order.awb_number,
+          courierName: order.courier_name,
+          expectedDeliveryDate: order.expected_delivery_date,
           createdAt: order.created_at,
           items: formattedItems,
           payments: formattedPayments,
@@ -437,6 +440,32 @@ class AdminOrderController {
       }));
 
       res.status(200).json({ success: true, data: formatted });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async updateManualShipping(req, res, next) {
+    try {
+      const orderId = parseInt(req.params.id, 10);
+      const adminUserId = req.user.id;
+      const { awbNumber, courierName, expectedDeliveryDate } = req.body;
+
+      const order = await OrderModel.findById(orderId);
+      if (!order) throw new NotFoundError('Order not found.');
+
+      await db.query(
+        "UPDATE orders SET awb_number = ?, courier_name = ?, expected_delivery_date = ? WHERE id = ?",
+        [awbNumber || null, courierName || null, expectedDeliveryDate || null, orderId]
+      );
+
+      await orderStateMachine.transition(orderId, 'SHIPPED', {
+        actorType: 'ADMIN',
+        actorUserId: adminUserId,
+        note: `Manual shipping details updated: Courier - ${courierName}, AWB - ${awbNumber}`
+      });
+
+      res.status(200).json({ success: true, message: 'Shipping details updated successfully.' });
     } catch (err) {
       next(err);
     }

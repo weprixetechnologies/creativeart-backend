@@ -1,17 +1,18 @@
 const db = require('../config/db');
 
 class CategoryModel {
-  static async create({ parentId, name, slug, sortOrder, status }) {
+  static async create({ parentId, name, slug, sortOrder, status, photoUrl }) {
     const sql = `
-      INSERT INTO categories (parent_id, name, slug, sort_order, status)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO categories (parent_id, name, slug, sort_order, status, photo_url)
+      VALUES (?, ?, ?, ?, ?, ?)
     `;
     const res = await db.query(sql, [
       parentId || null,
       name,
       slug,
       sortOrder || 0,
-      status || 'ACTIVE'
+      status || 'ACTIVE',
+      photoUrl || null
     ]);
     return this.findById(res.insertId);
   }
@@ -60,6 +61,10 @@ class CategoryModel {
     if (updates.status !== undefined) {
       fields.push('status = ?');
       values.push(updates.status);
+    }
+    if (updates.photoUrl !== undefined) {
+      fields.push('photo_url = ?');
+      values.push(updates.photoUrl);
     }
 
     if (fields.length === 0) return null;

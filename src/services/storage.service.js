@@ -8,7 +8,7 @@ class StorageService {
    * @returns {{ uploadUrl: string, fileUrl: string }}
    */
   static getPresignedUploadUrl(key, contentType) {
-    const appUrl = process.env.APP_URL || 'https://api.thecreativeart.shop';
+    const appUrl = process.env.APP_URL || 'http://localhost:37660';
     const uploadUrl = `${appUrl}/api/v1/storage/upload?key=${encodeURIComponent(key)}&contentType=${encodeURIComponent(contentType)}`;
     const fileUrl = `${bunnyConfig.pullZoneUrl}/${key}`;
 
