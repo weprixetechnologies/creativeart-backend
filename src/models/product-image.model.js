@@ -25,6 +25,13 @@ class ProductImageModel {
     return db.query(sql, [productId]);
   }
 
+  static async findByProductIds(productIds) {
+    if (!productIds || productIds.length === 0) return [];
+    const placeholders = productIds.map(() => '?').join(',');
+    const sql = `SELECT * FROM product_images WHERE product_id IN (${placeholders}) ORDER BY sort_order ASC`;
+    return db.query(sql, productIds);
+  }
+
   static async clearPrimary(productId) {
     const sql = 'UPDATE product_images SET is_primary = 0 WHERE product_id = ?';
     await db.query(sql, [productId]);

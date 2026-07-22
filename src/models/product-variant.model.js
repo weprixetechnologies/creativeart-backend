@@ -32,6 +32,18 @@ class ProductVariantModel {
     return db.query(sql, [productId]);
   }
 
+  static async findByProductIds(productIds, status) {
+    if (!productIds || productIds.length === 0) return [];
+    const placeholders = productIds.map(() => '?').join(',');
+    let sql = `SELECT * FROM product_variants WHERE product_id IN (${placeholders})`;
+    const params = [...productIds];
+    if (status) {
+      sql += ' AND status = ?';
+      params.push(status);
+    }
+    return db.query(sql, params);
+  }
+
   static async update(id, updates) {
     const fields = [];
     const values = [];

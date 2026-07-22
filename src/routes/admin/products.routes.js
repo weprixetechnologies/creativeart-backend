@@ -15,6 +15,7 @@ const ProductVariantController = require('../../controllers/product-variant.cont
 
 const ProductCustomFieldController = require('../../controllers/product-custom-field.controller');
 
+router.post('/cache/clear', ProductController.clearCache);
 router.get('/', ProductController.getProducts);
 router.get('/:id', ProductController.getProduct);
 router.post('/', ProductController.createProduct);

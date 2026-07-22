@@ -32,6 +32,18 @@ class ProductController {
     }
   }
 
+  static async clearCache(req, res, next) {
+    try {
+      await ProductService.clearProductsCache();
+      res.status(200).json({
+        success: true,
+        data: { message: 'Product catalog cache cleared successfully.' }
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
   static async getProduct(req, res, next) {
     try {
       const product = await ProductService.getProductById(req.params.id);

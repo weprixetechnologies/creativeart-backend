@@ -3,6 +3,15 @@ const ProductModel = require('../models/product.model');
 const { NotFoundError, ConflictError, ValidationError } = require('../utils/errors');
 
 class ProductVariantService {
+  static async clearCache() {
+    try {
+      const ProductService = require('./product.service');
+      await ProductService.clearProductsCache();
+    } catch (e) {
+      // ignore
+    }
+  }
+
   static async verifyVariableProduct(productId) {
     const product = await ProductModel.findById(productId);
     if (!product) {
@@ -28,7 +37,9 @@ class ProductVariantService {
       throw new ConflictError('Variant SKU is already in use.');
     }
 
-    return ProductVariantModel.create({ ...data, productId });
+    const created = await ProductVariantModel.create({ ...data, productId });
+    await this.clearCache();
+    return created;
   }
 
   static async updateVariant(productId, variantId, updates) {
@@ -47,7 +58,9 @@ class ProductVariantService {
       }
     }
 
-    return ProductVariantModel.update(variantId, updates);
+    const updated = await ProductVariantModel.update(variantId, updates);
+    await this.clearCache();
+    return updated;
   }
 
   static async deleteVariant(productId, variantId) {
@@ -59,6 +72,7 @@ class ProductVariantService {
     }
 
     await ProductVariantModel.delete(variantId);
+    await this.clearCache();
   }
 }
 

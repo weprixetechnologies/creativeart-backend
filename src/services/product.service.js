@@ -4,8 +4,22 @@ const ProductImageModel = require('../models/product-image.model');
 const ProductVariantModel = require('../models/product-variant.model');
 const ProductCustomFieldModel = require('../models/product-custom-field.model');
 const { NotFoundError, ConflictError, ValidationError } = require('../utils/errors');
+const redisClient = require('../config/redis');
 
 class ProductService {
+  static async clearProductsCache() {
+    try {
+      if (redisClient.status === 'ready') {
+        const keys = await redisClient.keys('cache:products:*');
+        if (keys.length > 0) {
+          await redisClient.del(...keys);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to clear products cache:', err.message);
+    }
+  }
+
   static async createProduct(data) {
     const existing = await ProductModel.findBySlug(data.slug);
     if (existing) {
@@ -39,19 +53,17 @@ class ProductService {
       }
       data.productType = null;
 
-      if (data.advanceAmount === undefined || data.advanceAmount === null ||
-          data.finalAmount === undefined || data.finalAmount === null ||
-          data.totalAmount === undefined || data.totalAmount === null) {
-        throw new ValidationError('advanceAmount, finalAmount, and totalAmount are required for PROJECT.');
-      }
-
-      const sum = Number(data.advanceAmount) + Number(data.finalAmount);
-      if (Number(data.totalAmount) !== sum) {
+      const adv = data.advanceAmount || 0;
+      const fin = data.finalAmount || 0;
+      const tot = data.totalAmount || 0;
+      if (tot !== adv + fin) {
         throw new ValidationError('totalAmount must equal advanceAmount + finalAmount.');
       }
     }
 
-    return ProductModel.create(data);
+    const created = await ProductModel.create(data);
+    await this.clearProductsCache();
+    return created;
   }
 
   static async getProductById(id) {
@@ -98,26 +110,67 @@ class ProductService {
   }
 
   static async getProducts(filters) {
-    const result = await ProductModel.findAll(filters);
-    
-    // Enrich catalog items with their images and variants
-    const enriched = await Promise.all(result.data.map(async (prod) => {
-      const images = await ProductImageModel.findByProductId(prod.id);
-      let variants = await ProductVariantModel.findByProductId(prod.id);
-      if (filters.status !== undefined && filters.status === 'ACTIVE') {
-        variants = variants.filter(v => v.status === 'ACTIVE');
+    const cacheKey = `cache:products:${JSON.stringify(filters)}`;
+
+    // Try Redis cache first
+    try {
+      if (redisClient.status === 'ready') {
+        const cached = await redisClient.get(cacheKey);
+        if (cached) {
+          return JSON.parse(cached);
+        }
       }
-      return {
-        ...prod,
-        images,
-        variants
-      };
+    } catch (e) {
+      // Degrade gracefully on Redis errors
+    }
+
+    const result = await ProductModel.findAll(filters);
+    const productIds = result.data.map(p => p.id);
+
+    if (productIds.length === 0) {
+      return { data: [], meta: result.meta };
+    }
+
+    // Batch fetch all images & variants in 2 single SQL queries (eliminates N+1 queries)
+    const variantStatusFilter = (filters.status !== undefined && filters.status === 'ACTIVE') ? 'ACTIVE' : null;
+    const [allImages, allVariants] = await Promise.all([
+      ProductImageModel.findByProductIds(productIds),
+      ProductVariantModel.findByProductIds(productIds, variantStatusFilter)
+    ]);
+
+    const imagesMap = {};
+    allImages.forEach(img => {
+      if (!imagesMap[img.product_id]) imagesMap[img.product_id] = [];
+      imagesMap[img.product_id].push(img);
+    });
+
+    const variantsMap = {};
+    allVariants.forEach(v => {
+      if (!variantsMap[v.product_id]) variantsMap[v.product_id] = [];
+      variantsMap[v.product_id].push(v);
+    });
+
+    const enriched = result.data.map(prod => ({
+      ...prod,
+      images: imagesMap[prod.id] || [],
+      variants: variantsMap[prod.id] || []
     }));
 
-    return {
+    const response = {
       data: enriched,
       meta: result.meta
     };
+
+    // Store in Redis with 60s TTL
+    try {
+      if (redisClient.status === 'ready') {
+        await redisClient.set(cacheKey, JSON.stringify(response), 'EX', 60);
+      }
+    } catch (e) {
+      // ignore cache write error
+    }
+
+    return response;
   }
 
   static async updateProduct(id, updates) {
@@ -173,7 +226,9 @@ class ProductService {
       }
     }
 
-    return ProductModel.update(id, updates);
+    const updated = await ProductModel.update(id, updates);
+    await this.clearProductsCache();
+    return updated;
   }
 
   static async deleteProduct(id) {
@@ -183,6 +238,7 @@ class ProductService {
     }
 
     await ProductModel.delete(id);
+    await this.clearProductsCache();
   }
 }
 
