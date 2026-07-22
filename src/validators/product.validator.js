@@ -19,6 +19,8 @@ const createProductSchema = Joi.object({
 
 const updateProductSchema = Joi.object({
   categoryId: Joi.number().integer().min(1),
+  itemType: Joi.string().valid('PRODUCT', 'PROJECT'),
+  productType: Joi.string().valid('SIMPLE', 'VARIABLE', 'CUSTOMISABLE').allow(null),
   name: Joi.string().max(200),
   slug: Joi.string().max(220).regex(slugRegex).message('Slug must only contain lowercase alphanumeric characters and hyphens.'),
   description: Joi.string(),

@@ -1,20 +1,44 @@
 const db = require('../config/db');
 
 class CategoryModel {
+  static async ensurePhotoUrlColumn() {
+    try {
+      const cols = await db.query('SHOW COLUMNS FROM categories LIKE "photo_url"');
+      if (cols.length === 0) {
+        await db.query('ALTER TABLE categories ADD COLUMN photo_url VARCHAR(500) NULL AFTER slug');
+      }
+    } catch (e) {
+      console.error('Failed to auto-migrate categories photo_url column:', e.message);
+    }
+  }
+
   static async create({ parentId, name, slug, sortOrder, status, photoUrl }) {
-    const sql = `
-      INSERT INTO categories (parent_id, name, slug, sort_order, status, photo_url)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `;
-    const res = await db.query(sql, [
-      parentId || null,
-      name,
-      slug,
-      sortOrder || 0,
-      status || 'ACTIVE',
-      photoUrl || null
-    ]);
-    return this.findById(res.insertId);
+    const runQuery = async () => {
+      const sql = `
+        INSERT INTO categories (parent_id, name, slug, sort_order, status, photo_url)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `;
+      return db.query(sql, [
+        parentId || null,
+        name,
+        slug,
+        sortOrder || 0,
+        status || 'ACTIVE',
+        photoUrl || null
+      ]);
+    };
+
+    try {
+      const res = await runQuery();
+      return this.findById(res.insertId);
+    } catch (err) {
+      if (err.code === 'ER_BAD_FIELD_ERROR' || err.errno === 1054) {
+        await this.ensurePhotoUrlColumn();
+        const res = await runQuery();
+        return this.findById(res.insertId);
+      }
+      throw err;
+    }
   }
 
   static async findById(id) {
@@ -71,7 +95,17 @@ class CategoryModel {
 
     values.push(id);
     const sql = `UPDATE categories SET ${fields.join(', ')} WHERE id = ?`;
-    await db.query(sql, values);
+
+    try {
+      await db.query(sql, values);
+    } catch (err) {
+      if (err.code === 'ER_BAD_FIELD_ERROR' || err.errno === 1054) {
+        await this.ensurePhotoUrlColumn();
+        await db.query(sql, values);
+      } else {
+        throw err;
+      }
+    }
     return this.findById(id);
   }
 
