@@ -101,15 +101,15 @@ class CheckoutService {
 
     let orderId = null;
     const isCod = paymentMethod === 'COD';
-    const gatewayOrderId = isCod 
-      ? 'cod_order_' + Math.random().toString(36).substring(2, 15) 
+    const gatewayOrderId = isCod
+      ? 'cod_order_' + Math.random().toString(36).substring(2, 15)
       : uuidv4();
     const gatewayPaymentId = gatewayOrderId;
 
     // 6. DB Transactional commit
     await db.transaction(async (conn) => {
       const initialStatus = 'PLACED';
-      
+
       // Create main order row
       orderId = await OrderModel.createOrder(conn, {
         orderNumber,
@@ -182,7 +182,7 @@ class CheckoutService {
       // Create initial payment intent record
       const gateway = isCod ? 'COD' : 'PHONEPE';
       const paymentStatus = isCod ? 'PENDING' : 'CREATED';
-      
+
       await conn.query(
         `INSERT INTO order_payments (order_id, payment_type, gateway, gateway_order_id, gateway_payment_id, amount, status)
          VALUES (?, 'FULL', ?, ?, ?, ?, ?)`,
@@ -196,7 +196,7 @@ class CheckoutService {
         toStatus: initialStatus,
         actorType: 'SYSTEM',
         actorUserId: userId,
-        note: isCod 
+        note: isCod
           ? 'Checkout standard order created with COD'
           : 'Checkout standard order created pending PhonePe payment confirmation'
       });
@@ -207,7 +207,7 @@ class CheckoutService {
           "UPDATE carts SET status = 'CONVERTED' WHERE user_id = ? AND status = 'ACTIVE'",
           [userId]
         );
-      } catch (err) {}
+      } catch (err) { }
     });
 
     if (isCod) {
@@ -220,7 +220,7 @@ class CheckoutService {
     }
 
     // Prepaid: Call PhonePe pay API
-    const frontendBase = process.env.FRONTEND_URL || 'http://localhost:3001';
+    const frontendBase = process.env.FRONTEND_URL || 'https://thecreativeart.shop';
     const redirectUrl = `${frontendBase}/order-confirmation?orderId=${orderId}`;
     const initiateRes = await PaymentService.initiatePayment({
       merchantOrderId: gatewayOrderId,
@@ -296,14 +296,14 @@ class CheckoutService {
     }
 
     // 4. Snapshot pricing from the project product definition
-    const subtotal      = parseFloat(product.total_amount);
+    const subtotal = parseFloat(product.total_amount);
     const advanceAmount = parseFloat(product.advance_amount);
-    const finalAmount   = parseFloat(product.final_amount);
-    const totalAmount   = parseFloat(product.total_amount);
+    const finalAmount = parseFloat(product.final_amount);
+    const totalAmount = parseFloat(product.total_amount);
 
     // Generate Order Number: ORD-YYYYMMDD-XXXX
-    const dateStr     = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const randomStr   = Math.floor(1000 + Math.random() * 9000);
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const randomStr = Math.floor(1000 + Math.random() * 9000);
     const orderNumber = `ORD-${dateStr}-${randomStr}`;
 
     let orderId = null;
@@ -407,7 +407,7 @@ class CheckoutService {
     });
 
     // Initiate payment on PhonePe
-    const frontendBase = process.env.FRONTEND_URL || 'http://localhost:3001';
+    const frontendBase = process.env.FRONTEND_URL || 'https://thecreativeart.shop';
     const redirectUrl = `${frontendBase}/order-confirmation?orderId=${orderId}`;
     const initiateRes = await PaymentService.initiatePayment({
       merchantOrderId: gatewayOrderId,

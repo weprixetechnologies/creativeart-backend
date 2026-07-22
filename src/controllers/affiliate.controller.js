@@ -191,7 +191,7 @@ class AffiliateController {
         throw new NotFoundError('Affiliate profile not found.');
       }
 
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+      const frontendUrl = process.env.FRONTEND_URL || 'https://thecreativeart.shop';
       res.status(200).json({
         success: true,
         data: {
@@ -527,7 +527,7 @@ class AffiliateController {
 
       const rows = await db.query("SELECT * FROM settings WHERE `key` IN (?, ?, ?, ?)", keys);
       const settings = {};
-      
+
       // Default value fallbacks
       settings.affiliate_default_commission_type = 'PERCENTAGE';
       settings.affiliate_default_commission_value = '10.00';
@@ -589,7 +589,7 @@ class AffiliateController {
     try {
       // 1. Pending applications count
       const pendingApps = await db.query("SELECT COUNT(*) as cnt FROM affiliates WHERE status = 'PENDING'");
-      
+
       // 2. Total active approved affiliates
       const activeAffiliates = await db.query("SELECT COUNT(*) as cnt FROM affiliates WHERE status = 'APPROVED'");
 

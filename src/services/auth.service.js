@@ -189,7 +189,7 @@ class AuthService {
     );
 
     // In a real system, you would send email/SMS. Here we return it (or mock the dispatch)
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+    const frontendUrl = process.env.FRONTEND_URL || 'https://thecreativeart.shop';
     const resetLink = `${frontendUrl}/reset-password?token=${resetToken}`;
     console.log(`Password reset requested. Reset link: ${resetLink}`);
     return { resetToken };
@@ -201,7 +201,7 @@ class AuthService {
         token,
         process.env.JWT_ACCESS_SECRET || 'creativeart_access_secret_key_2026'
       );
-      
+
       if (decoded.action !== 'password-reset') {
         throw new AuthenticationError('Invalid reset token action.');
       }
@@ -213,7 +213,7 @@ class AuthService {
 
       const passwordHash = await bcrypt.hash(newPassword, 10);
       await UserModel.update(user.id, { password_hash: passwordHash });
-      
+
       // Revoke all refresh tokens to terminate other active sessions
       await RefreshTokenModel.revokeAllForUser(user.id);
 

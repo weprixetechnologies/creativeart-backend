@@ -24,7 +24,7 @@ class OrderController {
       }
 
       const orderIds = rows.map(o => o.id);
-      
+
       // Fetch all items for these orders
       const itemsRows = await db.query(
         `SELECT oi.*, p.slug as product_slug, pv.sku as variant_sku,
@@ -230,7 +230,7 @@ class OrderController {
       const orderId = parseInt(req.params.id, 10);
 
       const filePath = await InvoiceService.getInvoicePath(orderId, userId, userRole);
-      
+
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename=invoice-${orderId}.pdf`);
       res.sendFile(filePath);
@@ -351,7 +351,7 @@ class OrderController {
         );
       }
 
-      const frontendBase = process.env.FRONTEND_URL || 'http://localhost:3001';
+      const frontendBase = process.env.FRONTEND_URL || 'https://thecreativeart.shop';
       const redirectUrl = `${frontendBase}/order-confirmation?orderId=${orderId}`;
       const initiateRes = await PaymentService.initiatePayment({
         merchantOrderId: gatewayOrderId,
@@ -417,7 +417,7 @@ class OrderController {
         );
       }
 
-      const frontendBase = process.env.FRONTEND_URL || 'http://localhost:3001';
+      const frontendBase = process.env.FRONTEND_URL || 'https://thecreativeart.shop';
       const redirectUrl = `${frontendBase}/order-confirmation?orderId=${orderId}`;
       const initiateRes = await PaymentService.initiatePayment({
         merchantOrderId: gatewayOrderId,
@@ -454,16 +454,16 @@ class OrderController {
 
       // Check payments status
       const payments = await OrderModel.getPayments(orderId);
-      
+
       // Find the pending PhonePe payment (CREATED = awaiting gateway confirmation)
       const pendingPayment = payments.find(p => p.gateway === 'PHONEPE' && p.status === 'CREATED');
       let currentPaymentStatus = pendingPayment ? 'PENDING' : (payments.length > 0 ? payments[0].status : 'PENDING');
-      
+
       if (pendingPayment) {
         try {
           const phonepeStatus = await PaymentService.checkPaymentStatus(pendingPayment.gateway_order_id);
           const state = phonepeStatus.state; // COMPLETED | FAILED | PENDING
-          
+
           if (state === 'COMPLETED') {
             // ── Step 1: update payment record (plain query — no outer transaction).
             // orderStateMachine.transition() opens its own internal transaction with FOR UPDATE.
