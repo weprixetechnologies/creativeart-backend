@@ -1,6 +1,17 @@
 const db = require('../config/db');
 
 class ProductModel {
+  static async ensureStockQtyColumn() {
+    try {
+      const cols = await db.query('SHOW COLUMNS FROM products LIKE "stock_qty"');
+      if (cols.length === 0) {
+        await db.query('ALTER TABLE products ADD COLUMN stock_qty INT UNSIGNED NOT NULL DEFAULT 100 AFTER base_price');
+      }
+    } catch (e) {
+      console.error('Failed to auto-migrate products stock_qty column:', e.message);
+    }
+  }
+
   static async create({
     categoryId,
     itemType,
@@ -9,33 +20,48 @@ class ProductModel {
     slug,
     description,
     basePrice,
+    stockQty,
     advanceAmount,
     finalAmount,
     totalAmount,
     materialInstructions,
     status
   }) {
-    const sql = `
-      INSERT INTO products (
-        category_id, item_type, product_type, name, slug, description, base_price,
-        advance_amount, final_amount, total_amount, material_instructions, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-    const res = await db.query(sql, [
-      categoryId,
-      itemType,
-      itemType === 'PRODUCT' ? productType : null,
-      name,
-      slug,
-      description,
-      basePrice,
-      itemType === 'PROJECT' ? advanceAmount : null,
-      itemType === 'PROJECT' ? finalAmount : null,
-      itemType === 'PROJECT' ? totalAmount : null,
-      itemType === 'PROJECT' ? materialInstructions : null,
-      status || 'DRAFT'
-    ]);
-    return this.findById(res.insertId);
+    const runQuery = async () => {
+      const sql = `
+        INSERT INTO products (
+          category_id, item_type, product_type, name, slug, description, base_price, stock_qty,
+          advance_amount, final_amount, total_amount, material_instructions, status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+      return db.query(sql, [
+        categoryId,
+        itemType,
+        itemType === 'PRODUCT' ? productType : null,
+        name,
+        slug,
+        description,
+        basePrice,
+        stockQty !== undefined && stockQty !== null ? parseInt(stockQty, 10) : 100,
+        itemType === 'PROJECT' ? advanceAmount : null,
+        itemType === 'PROJECT' ? finalAmount : null,
+        itemType === 'PROJECT' ? totalAmount : null,
+        itemType === 'PROJECT' ? materialInstructions : null,
+        status || 'DRAFT'
+      ]);
+    };
+
+    try {
+      const res = await runQuery();
+      return this.findById(res.insertId);
+    } catch (err) {
+      if (err.code === 'ER_BAD_FIELD_ERROR' || err.errno === 1054) {
+        await this.ensureStockQtyColumn();
+        const res = await runQuery();
+        return this.findById(res.insertId);
+      }
+      throw err;
+    }
   }
 
   static async findById(id) {
@@ -135,6 +161,7 @@ class ProductModel {
       'slug',
       'description',
       'base_price',
+      'stock_qty',
       'advance_amount',
       'final_amount',
       'total_amount',
@@ -168,7 +195,17 @@ class ProductModel {
 
     values.push(id);
     const sql = `UPDATE products SET ${fields.join(', ')} WHERE id = ?`;
-    await db.query(sql, values);
+    
+    try {
+      await db.query(sql, values);
+    } catch (err) {
+      if (err.code === 'ER_BAD_FIELD_ERROR' || err.errno === 1054) {
+        await this.ensureStockQtyColumn();
+        await db.query(sql, values);
+      } else {
+        throw err;
+      }
+    }
     return this.findById(id);
   }
 

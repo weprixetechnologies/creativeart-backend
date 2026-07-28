@@ -137,6 +137,12 @@ class CartService {
       if (variantId) {
         throw new ValidationError('variantId is only allowed for variable products.');
       }
+      if (product.item_type === 'PRODUCT') {
+        const availableStock = product.stock_qty !== undefined && product.stock_qty !== null ? product.stock_qty : 100;
+        if (availableStock < qty) {
+          throw new ValidationError('Requested quantity exceeds available stock.');
+        }
+      }
     }
 
     // 5. Validate custom fields if CUSTOMISABLE or PROJECT

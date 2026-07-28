@@ -68,6 +68,14 @@ class CheckoutService {
         if (variant.stock_qty < item.qty) {
           throw new ValidationError(`Insufficient stock for product variant "${variant.sku}".`);
         }
+      } else {
+        const prod = await ProductModel.findById(item.productId);
+        if (prod && prod.item_type === 'PRODUCT') {
+          const availableStock = prod.stock_qty !== undefined && prod.stock_qty !== null ? prod.stock_qty : 100;
+          if (availableStock < item.qty) {
+            throw new ValidationError(`Insufficient stock for product "${item.productName}".`);
+          }
+        }
       }
     }
 
@@ -162,11 +170,16 @@ class CheckoutService {
           }
         }
 
-        // Decrement variant stock
+        // Decrement variant stock or product stock
         if (item.variantId) {
           await conn.query(
             "UPDATE product_variants SET stock_qty = stock_qty - ? WHERE id = ?",
             [item.qty, item.variantId]
+          );
+        } else {
+          await conn.query(
+            "UPDATE products SET stock_qty = GREATEST(0, stock_qty - ?) WHERE id = ? AND item_type = 'PRODUCT'",
+            [item.qty, item.productId]
           );
         }
       }
