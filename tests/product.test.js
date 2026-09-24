@@ -168,6 +168,26 @@ async function runTests() {
   assert.strictEqual(updateRes.body.data.base_price, '350.00');
   console.log('✓ Product updated successfully');
 
+  // 7b. Update MADE TO ORDER PROJECT product with stockQty: null (should succeed and sanitize stockQty)
+  const updateProjRes = await request(app)
+    .put(`/api/v1/admin/products/${projectId}`)
+    .set('Authorization', `Bearer ${adminToken}`)
+    .send({
+      categoryId,
+      itemType: 'PROJECT',
+      productType: null,
+      name: 'Preserve Your Wedding Frame',
+      slug: 'preserve-your-wedding-frame',
+      description: 'Preserve Your Wedding Flowers',
+      basePrice: 5000.00,
+      stockQty: null,
+      status: 'ACTIVE'
+    });
+  assert.strictEqual(updateProjRes.status, 200);
+  assert.strictEqual(updateProjRes.body.success, true);
+  assert.strictEqual(updateProjRes.body.data.name, 'Preserve Your Wedding Frame');
+  console.log('✓ MADE TO ORDER PROJECT updated successfully with stockQty null handling');
+
   // 8. Delete product: should succeed
   const delRes = await request(app)
     .delete(`/api/v1/admin/products/${p1Id}`)

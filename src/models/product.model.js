@@ -172,12 +172,19 @@ class ProductModel {
     allowedFields.forEach((field) => {
       // Map camelCase to snake_case if necessary, or just keep matching updates keys
       const jsKey = field.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+      let val;
       if (updates[jsKey] !== undefined) {
-        fields.push(`${field} = ?`);
-        values.push(updates[jsKey]);
+        val = updates[jsKey];
       } else if (updates[field] !== undefined) {
+        val = updates[field];
+      }
+
+      if (val !== undefined) {
+        if (field === 'stock_qty') {
+          val = (val !== null && val !== undefined && !isNaN(val)) ? parseInt(val, 10) : 100;
+        }
         fields.push(`${field} = ?`);
-        values.push(updates[field]);
+        values.push(val);
       }
     });
 

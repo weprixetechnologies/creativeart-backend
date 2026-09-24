@@ -61,6 +61,10 @@ class ProductService {
       }
     }
 
+    if (data.stockQty === null || data.stockQty === undefined) {
+      data.stockQty = 100;
+    }
+
     const created = await ProductModel.create(data);
     await this.clearProductsCache();
     return created;
@@ -225,6 +229,9 @@ class ProductService {
         }
       }
     }
+
+    if (updates.stockQty === null) updates.stockQty = 100;
+    if (updates.stock_qty === null) updates.stock_qty = 100;
 
     const updated = await ProductModel.update(id, updates);
     await this.clearProductsCache();
